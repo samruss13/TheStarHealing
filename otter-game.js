@@ -42,9 +42,9 @@
   const PLACES = [
     { id: 'rock', name: 'Morro Rock', x: 630, y: 270, r: 200,
       fact: 'A volcanic plug about 23 million years old, the westernmost of the "Nine Sisters" peaks. It\'s a protected home for nesting peregrine falcons.' },
-    { id: 'harbor', name: 'The Harbor & T-Pier', x: 1095, y: 340, r: 110,
+    { id: 'harbor', name: 'The Harbor & T-Pier', x: 1196, y: 372, r: 68, // right of the pier, clear of Madi's beach chat
       fact: 'Calm harbor water near the T-pier is a favorite otter nap spot, with plenty of crabs and clams nearby.' },
-    { id: 'sealions', name: 'Sea Lion Dock', x: 1262, y: 500, r: 105,
+    { id: 'sealions', name: 'Sea Lion Dock', x: 1268, y: 518, r: 88,
       fact: 'California sea lions haul out on the floating docks to sunbathe. They are very, very loud about it.' },
     { id: 'embarcadero', name: 'The Embarcadero', x: 1300, y: 790, r: 110,
       fact: 'Morro Bay\'s waterfront. Otters float right off the docks, cracking shellfish on their bellies with a favorite rock.' },
@@ -261,6 +261,7 @@
     // dark brown on the sand (cream text disappeared against it), laid along the spit, mid-way down
     label('Sand Spit', 830, 800, 30, 1.34, 0.85, '78,58,36');
     label('Embarcadero', 1520, 700, 20, 0, 0.85);
+    label('Harbor & T-Pier', 1215, 362, 20, 0, 0.9);
     label('The Stacks', 1540, 270, 18, 0, 0.85);
     label('Estuary', 1440, 1210, 20, 0, 0.85);
     label('Kelp Forest', 300, 1090, 18, 0, 0.6);
@@ -530,6 +531,10 @@
   const speechLive = $('[data-g="speech"]', dlg);
 
   let state, running = false, raf = 0, last = 0, cardTimer = 0;
+  // place cards: { moving: ms swum since shown, still: ms stopped, rested: had time to read while stopped }
+  let cardWatch = null;
+  const CARD_READ_MS = 11000;   // swimming the whole time: generous reading time
+  const CARD_AFTER_REST_MS = 1200; // stopped to read, then swims on: tidy away shortly after
   const keys = new Set();
   const stick = { active: false, ox: 0, oy: 0, x: 0, y: 0, id: null };
   let view = { w: 0, h: 0, scale: 1, dpr: 1, P: 1000, gw: 0, gh: 0, top: 0, gdpr: 1 };
@@ -568,9 +573,9 @@
       row.append(again, keep); card.append(row);
     }
     card.classList.add('is-visible');
-    if (!persist) cardTimer = setTimeout(hideCard, 7000);
+    cardWatch = persist ? null : { moving: 0, still: 0, rested: false };
   }
-  function hideCard() { card.classList.remove('is-visible'); }
+  function hideCard() { card.classList.remove('is-visible'); cardWatch = null; }
 
   /* ---------------- sizing + 3D camera ---------------- */
   function resize() {
@@ -752,6 +757,17 @@
     }
     if (il < 0.05 && sp < 0.35) s.idle += dt; else s.idle = 0;
     s.onBack = s.idle > 1400;
+
+    // place card lifetime: frozen while Ollie is stopped, counts down only while swimming
+    if (cardWatch) {
+      const swimming = il > 0.05 || sp > 0.5;
+      if (swimming) cardWatch.moving += dt;
+      else {
+        cardWatch.still += dt;
+        if (cardWatch.still > 1500 && !cardWatch.rested) { cardWatch.rested = true; cardWatch.moving = 0; }
+      }
+      if (cardWatch.moving >= (cardWatch.rested ? CARD_AFTER_REST_MS : CARD_READ_MS)) hideCard();
+    }
 
     // ripples
     s.rippleClock -= dt;
