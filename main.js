@@ -114,7 +114,9 @@
     const hero = $('.hero');
     let w = 0, h = 0, dpr = 1, stars = [], cons = [], running = false, raf = 0;
     const start = performance.now();
-    const mouse = { x: -9999, y: -9999, nx: 0, ny: 0, tx: 0, ty: 0, inside: false };
+    // power eases 0→1 while a pointer is over the sky, so highlights fade instead of popping
+    const mouse = { x: -9999, y: -9999, nx: 0, ny: 0, tx: 0, ty: 0, inside: false, power: 0 };
+    let starsW = 0;
     let shooting = null, nextShoot = start + 3000;
 
     // Scorpius (approximate, normalized). Index 3 = Antares.
@@ -135,18 +137,26 @@
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      // Only re-scatter the stars when the width changes (e.g. rotating the phone).
+      // Mobile browsers fire resize when the address bar slides away during a swipe;
+      // stars are stored as fractions of the sky so they simply stretch with it.
+      if (stars.length && w === starsW) return layoutConstellation();
+      starsW = w;
       const count = Math.min(900, Math.round((w * h) / 2400));
       stars = Array.from({ length: count }, () => {
         const z = Math.random() ** 2.2;
         return {
-          x: Math.random() * w, y: Math.random() * h, z,
+          fx: Math.random(), fy: Math.random(), z,
           r: 0.35 + z * 1.35,
           a: 0.25 + Math.random() * 0.6,
           tw: 0.6 + Math.random() * 2.2, ph: Math.random() * Math.PI * 2,
           c: palette[(Math.random() * palette.length) | 0],
         };
       });
+      layoutConstellation();
+    }
 
+    function layoutConstellation() {
       // fit constellation: right side on desktop, behind text on mobile
       const wide = w > 900;
       const minX = 0.245, maxX = 0.83, minY = 0.12, maxY = 0.745;
@@ -171,16 +181,18 @@
       // ease mouse parallax
       mouse.nx += (mouse.tx - mouse.nx) * 0.05;
       mouse.ny += (mouse.ty - mouse.ny) * 0.05;
+      mouse.power += ((mouse.inside ? 1 : 0) - mouse.power) * (reduceMotion ? 1 : 0.12);
+      const pw = mouse.power;
 
       // background stars
       for (const s of stars) {
-        const px = s.x + mouse.nx * s.z * 26;
-        const py = s.y + mouse.ny * s.z * 18;
+        const px = s.fx * w + mouse.nx * s.z * 26;
+        const py = s.fy * h + mouse.ny * s.z * 18;
         let a = s.a * (reduceMotion ? 1 : 0.55 + 0.45 * Math.sin(t * s.tw + s.ph));
-        if (mouse.inside) {
+        if (pw > 0.01) {
           const dx = px - mouse.x, dy = py - mouse.y, d2 = dx * dx + dy * dy;
           if (d2 < 120 * 120) {
-            const k = 1 - Math.sqrt(d2) / 120;
+            const k = (1 - Math.sqrt(d2) / 120) * pw;
             a = Math.min(1, a + k * 0.8);
             if (s.z > 0.12) {
               ctx.strokeStyle = `rgba(240,179,156,${k * 0.35})`;
@@ -212,9 +224,9 @@
       for (const c of cons) {
         const x = c.x + cx, y = c.y + cy;
         let glow = 0;
-        if (mouse.inside) {
+        if (pw > 0.01) {
           const d = Math.hypot(x - mouse.x, y - mouse.y);
-          if (d < 160) glow = 1 - d / 160;
+          if (d < 160) glow = (1 - d / 160) * pw;
         }
         const pulse = reduceMotion ? 1 : 0.8 + 0.2 * Math.sin(t * 1.6 + c.i);
         const isA = c.i === ANTARES;
@@ -276,7 +288,11 @@
       mouse.tx = (mouse.x / w - 0.5) * 2; mouse.ty = (mouse.y / h - 0.5) * 2;
       if (reduceMotion) draw(performance.now() + 10000);
     });
-    hero.addEventListener('pointerleave', () => { mouse.inside = false; mouse.tx = 0; mouse.ty = 0; });
+    // finger lifted, swipe turned into a scroll, or mouse left: fade out at the last spot
+    const release = () => { mouse.inside = false; mouse.tx = 0; mouse.ty = 0; if (reduceMotion) draw(performance.now() + 10000); };
+    hero.addEventListener('pointerleave', release);
+    hero.addEventListener('pointercancel', release);
+    hero.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') release(); });
 
     new IntersectionObserver(([e]) => (e.isIntersecting ? play() : pause())).observe(hero);
     document.addEventListener('visibilitychange', () => (document.hidden ? pause() : play()));
