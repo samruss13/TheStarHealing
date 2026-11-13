@@ -42,6 +42,8 @@
     menu.setAttribute('aria-hidden', String(!open));
     menu.toggleAttribute('inert', !open);
     document.body.classList.toggle('menu-open', open);
+    // keep screen readers and Tab inside the menu while it is open
+    $$('main, .footer').forEach((el) => el.toggleAttribute('inert', open));
     if (open) setTimeout(() => $('a', menu).focus({ preventScroll: true }), 350);
   };
   toggle.addEventListener('click', () => setMenu(toggle.getAttribute('aria-expanded') !== 'true'));
@@ -76,12 +78,12 @@
     const illum = (1 - Math.cos(2 * Math.PI * p)) / 2;
     const phases = [
       [1.85, 'New Moon', 'Set a quiet intention. Seeds planted in the dark grow strongest.'],
-      [5.54, 'Waxing Crescent', 'Take one small, brave step toward what you called in.'],
+      [5.54, 'Waxing Crescent', 'Take one small, brave step toward what you are calling in.'],
       [9.23, 'First Quarter', 'Momentum time. Move your body and clear what blocks you.'],
       [12.92, 'Waxing Gibbous', 'Refine and nourish. Tend to yourself like a garden.'],
-      [16.61, 'Full Moon', 'Release what is heavy. A perfect night to charge your crystals.'],
-      [20.30, 'Waning Gibbous', 'Gratitude season. Share what you have learned.'],
-      [23.99, 'Last Quarter', 'Let go and declutter, in your space and your energy.'],
+      [16.61, 'Full Moon', 'Release what feels heavy. A perfect night to charge your crystals.'],
+      [20.30, 'Waning Gibbous', 'A season for gratitude. Share what you\'ve learned.'],
+      [23.99, 'Last Quarter', 'Let go and declutter, both your space and your energy.'],
       [27.68, 'Waning Crescent', 'Rest, float, restore. Be a sea otter about it.'],
       [99, 'New Moon', 'Set a quiet intention. Seeds planted in the dark grow strongest.'],
     ];
@@ -284,29 +286,29 @@
   (function zodiac() {
     const SIGNS = [
       { n: 'Aries', g: '♈', d: 'Mar 21 – Apr 19', e: 'Fire', s: [3, 21], r: 'Sound Healing',
-        t: 'All spark, all momentum. Your fire burns bright, but even a ram needs to rest. Let vibration slow your pulse and quiet the inner race.' },
+        t: 'All spark, all momentum. Your fire burns bright, but even a ram needs rest. Let vibration slow your pulse and quiet the inner race.' },
       { n: 'Taurus', g: '♉', d: 'Apr 20 – May 20', e: 'Earth', s: [4, 20], r: 'Makeup Artistry',
         t: 'Ruled by Venus, you love beauty you can feel. Treat yourself to a ritual of color and texture that celebrates exactly who you are.' },
       { n: 'Gemini', g: '♊', d: 'May 21 – Jun 20', e: 'Air', s: [5, 21], r: 'Sound Healing',
-        t: 'Your mind runs a hundred tabs at once. Crystal bowls give your thoughts somewhere soft to land.' },
+        t: 'Your mind has a hundred tabs open at once. Crystal bowls give your thoughts somewhere soft to land.' },
       { n: 'Cancer', g: '♋', d: 'Jun 21 – Jul 22', e: 'Water', s: [6, 21], r: 'Reiki',
         t: 'You hold space for everyone else. Let someone hold it for you this time. Reiki is a gentle way to refill your own cup.' },
       { n: 'Leo', g: '♌', d: 'Jul 23 – Aug 22', e: 'Fire', s: [7, 23], r: 'Makeup Artistry',
-        t: 'Born for the spotlight. Whether it is a wedding, a shoot or a Tuesday, you deserve a look that matches your glow.' },
+        t: 'Born for the spotlight. Whether it\'s a wedding, a shoot or a Tuesday, you deserve a look that matches your glow.' },
       { n: 'Virgo', g: '♍', d: 'Aug 23 – Sep 22', e: 'Earth', s: [8, 23], r: 'Reiki',
         t: 'The caretaker and the perfectionist. Your nervous system is asking you to stop fixing and simply receive.' },
       { n: 'Libra', g: '♎', d: 'Sep 23 – Oct 22', e: 'Air', s: [9, 23], r: 'Makeup Artistry',
         t: 'Harmony is your love language. A balanced, luminous look (and a little self-adoration) brings you back into alignment.' },
       { n: 'Scorpio', g: '♏', d: 'Oct 23 – Nov 21', e: 'Water', s: [10, 23], r: 'Reiki',
-        t: 'Deep, magnetic and always transforming, like Madi. Reiki meets you in the depths and helps you shed what you have outgrown.' },
+        t: 'Deep, magnetic and always transforming. Reiki meets you in the depths and helps you shed what you\'ve outgrown.' },
       { n: 'Sagittarius', g: '♐', d: 'Nov 22 – Dec 21', e: 'Fire', s: [11, 22], r: 'Sound Healing',
         t: 'The seeker. Let a seaside sound bath be your next adventure, one that travels inward.' },
       { n: 'Capricorn', g: '♑', d: 'Dec 22 – Jan 19', e: 'Earth', s: [12, 22], r: 'Reiki',
-        t: 'You carry so much so well. Set the weight down for an hour and let energy work loosen what you have been holding.' },
+        t: 'You carry so much so well. Set the weight down for an hour and let energy work loosen what you\'ve been holding.' },
       { n: 'Aquarius', g: '♒', d: 'Jan 20 – Feb 18', e: 'Air', s: [1, 20], r: 'Sound Healing',
         t: 'Visionary and a little otherworldly. Frequency and vibration speak your language. Tune in and recalibrate.' },
       { n: 'Pisces', g: '♓', d: 'Feb 19 – Mar 20', e: 'Water', s: [2, 19], r: 'Sound Healing',
-        t: 'Dreamy, intuitive, porous. Sound washes over you like the tide, cleansing whatever you absorbed from everyone else.' },
+        t: 'Dreamy, intuitive and porous. Sound moves over you like the tide, clearing whatever you\'ve absorbed from everyone else.' },
     ];
 
     const wheel = $('.zodiac__wheel');
@@ -322,7 +324,7 @@
 
     const center = document.createElement('div');
     center.className = 'zodiac__center';
-    center.innerHTML = '<img src="assets/logo.png" alt="" width="160" height="160" loading="lazy">';
+    center.innerHTML = '<img src="assets/logo-320.jpg" alt="" width="160" height="160" loading="lazy">';
     wheel.appendChild(center);
 
     const buttons = SIGNS.map((s, i) => {
@@ -361,7 +363,10 @@
       f('name').textContent = s.n;
       f('note').textContent = s.t;
       f('ritual').textContent = s.r;
-      f('season').textContent = i === seasonIdx ? `✦ It's ${s.n} season right now` : (s.n === 'Scorpio' ? '✦ Madi\'s sign' : '');
+      const madi = s.n === 'Scorpio';
+      f('season').textContent = i === seasonIdx
+        ? `✦ It's ${s.n} season right now${madi ? ' (Madi\'s sign, too)' : ''}`
+        : (madi ? '✦ Madi\'s sign' : '');
       if (animate && !reduceMotion) {
         reading.classList.remove('is-swapping'); void reading.offsetWidth; reading.classList.add('is-swapping');
       }
@@ -413,8 +418,9 @@
       };
     });
 
+    let W = host.clientWidth, H = host.clientHeight;
+    new ResizeObserver(() => { W = host.clientWidth; H = host.clientHeight; }).observe(host);
     const place = (f, t) => {
-      const W = host.clientWidth, H = host.clientHeight;
       const y = f.y + Math.sin(t * 0.9 + f.ph) * f.amp;
       const tilt = Math.sin(t * 1.3 + f.ph) * 14 + (f.vx > 0 ? 10 : -10);
       f.el.style.transform = `translate(${f.x * W}px, ${y * H}px) rotate(${tilt}deg) scale(${f.scale})`;
@@ -444,6 +450,16 @@
   (function marquee() {
     const track = $('.marquee__track');
     if (!track || reduceMotion) return;
+    const strip = $('.marquee');
+    const btn = $('.marquee-toggle');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const paused = btn.getAttribute('aria-pressed') !== 'true';
+        btn.setAttribute('aria-pressed', String(paused));
+        strip.classList.toggle('is-paused', paused);
+        $('.marquee-toggle__label', btn).textContent = paused ? 'Play gallery' : 'Pause gallery';
+      });
+    }
     [...track.children].forEach((node) => {
       const clone = node.cloneNode(true);
       clone.setAttribute('aria-hidden', 'true');
