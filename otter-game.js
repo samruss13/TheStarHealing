@@ -50,7 +50,8 @@
       fact: 'Morro Bay\'s waterfront. Otters float right off the docks, cracking shellfish on their bellies with a favorite rock.' },
     { id: 'kelp', name: 'Kelp Forest', x: 300, y: 900, r: 170,
       fact: 'Otters wrap themselves in kelp so they don\'t drift away while they nap. Swimming is slower in here, so take your time.' },
-    { id: 'spit', name: 'The Sand Spit', x: 880, y: 1000, r: 140,
+    // the spit is long and thin, so it triggers anywhere along its shore (see nearSpit), not around one point
+    { id: 'spit', name: 'The Sand Spit', x: 880, y: 1000, r: 140, along: 'spit',
       fact: 'A long ribbon of dunes that shelters the bay from Pacific swells. The ocean side is wild; the bay side is calm.' },
     { id: 'estuary', name: 'The Estuary', x: 1290, y: 1240, r: 165,
       fact: 'Morro Bay is a protected estuary where fresh water meets the sea, a nursery for fish, shorebirds and eelgrass.' },
@@ -85,6 +86,17 @@
   }
   const circlePath = ({ x, y, r }) => { const p = new Path2D(); p.arc(x, y, r, 0, Math.PI * 2); return p; };
   const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+
+  // is Ollie swimming within ~70px of the sand spit, on either side, anywhere along it?
+  const hitCtx = document.createElement('canvas').getContext('2d');
+  function nearSpit(x, y) {
+    if (y < 440 || y > H) return false;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      if (hitCtx.isPointInPath(paths.spit, x + Math.cos(a) * 70, y + Math.sin(a) * 70)) return true;
+    }
+    return false;
+  }
 
   const paths = {
     mainland: smoothPath(MAINLAND),
@@ -237,16 +249,17 @@
 
     // map labels
     g.textAlign = 'center';
-    const label = (t, x, y, size, rot = 0, alpha = 0.7) => {
+    const label = (t, x, y, size, rot = 0, alpha = 0.7, rgb = '251,243,236') => {
       g.save(); g.translate(x, y); g.rotate(rot);
       g.font = `italic 400 ${size}px "Fraunces", Georgia, serif`;
-      g.fillStyle = `rgba(251,243,236,${alpha})`;
+      g.fillStyle = `rgba(${rgb},${alpha})`;
       g.fillText(t, 0, 0); g.restore();
     };
     label('Pacific Ocean', 260, 420, 34, 0, 0.55);
     label('Morro Rock', 520, 420, 24);
     label('Morro Bay', 1110, 1060, 34, 0, 0.6);
-    label('Sand Spit', 905, 1260, 20, 1.36, 0.8);
+    // dark brown on the sand (cream text disappeared against it), laid along the spit, mid-way down
+    label('Sand Spit', 830, 800, 30, 1.34, 0.85, '78,58,36');
     label('Embarcadero', 1520, 700, 20, 0, 0.85);
     label('The Stacks', 1540, 270, 18, 0, 0.85);
     label('Estuary', 1440, 1210, 20, 0, 0.85);
@@ -754,7 +767,8 @@
 
     // places
     PLACES.forEach((p) => {
-      if (!s.found.has(p.id) && dist(s.x, s.y, p.x, p.y) < p.r) {
+      const close = p.along === 'spit' ? nearSpit(s.x, s.y) : dist(s.x, s.y, p.x, p.y) < p.r;
+      if (!s.found.has(p.id) && close) {
         s.found.add(p.id); updateCounts();
         if (!s.won) showCard(p.name, p.fact);
       }
