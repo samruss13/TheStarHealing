@@ -1,0 +1,5 @@
+# Original full-size photos (the site uses the optimized copies in assets/)
+/*.jpeg
+# Local tooling
+.claude/
+.impeccable/
