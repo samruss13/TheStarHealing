@@ -157,21 +157,46 @@
     }
 
     function layoutConstellation() {
-      // fit constellation: right side on desktop, behind text on mobile
+      // fit constellation: right side on desktop; on phones, in the gap
+      // between the buttons and the moon card so the moon never covers it
       const wide = w > 900;
       const minX = 0.245, maxX = 0.83, minY = 0.12, maxY = 0.745;
       const ratio = (maxY - minY) / (maxX - minX);
-      const boxW = wide ? Math.min(w * 0.4, (h * 0.66) / ratio) : Math.min(w * 0.86, (h * 0.42) / ratio);
-      const boxH = boxW * ratio;
-      const ox = wide ? w - boxW - w * 0.08 : (w - boxW) / 2;
-      const oy = wide ? (h - boxH) / 2 + h * 0.02 : h * 0.5;
+      let boxW, boxH, ox, oy, dim = 1;
+      if (wide) {
+        boxW = Math.min(w * 0.4, (h * 0.66) / ratio);
+        boxH = boxW * ratio;
+        ox = w - boxW - w * 0.08;
+        oy = (h - boxH) / 2 + h * 0.02;
+      } else {
+        // offsetTop ignores the reveal animation's transform, so this is the settled layout
+        const content = $('.hero__content'), acts = $('.hero__actions'), moon = $('.moon-card');
+        const top = content.offsetTop + acts.offsetTop + acts.offsetHeight + 24;
+        const bottom = (moon ? moon.offsetTop : h) - 24;
+        const maxH = w * 0.86 * ratio;
+        if (bottom - top >= 96) {
+          // room below the buttons: sit there, fully visible, toward the right
+          boxH = Math.min(bottom - top, maxH);
+          dim = 0.85;
+          oy = top + (bottom - top - boxH) / 2;
+          boxW = boxH / ratio;
+          ox = w - boxW - Math.max(24, w * 0.1);
+        } else {
+          // very short screens: rise behind the text, dimmed, still ending above the moon card
+          boxH = Math.min(bottom - h * 0.22, maxH);
+          dim = 0.45;
+          oy = bottom - boxH;
+          boxW = boxH / ratio;
+          ox = (w - boxW) / 2;
+        }
+      }
       cons = S.map(([x, y], i) => ({
         x: ox + ((x - minX) / (maxX - minX)) * boxW,
         y: oy + ((y - minY) / (maxY - minY)) * boxH,
         r: i === ANTARES ? 4.2 : i === 13 || i === 0 || i === 1 ? 2.8 : 2.1,
         i,
       }));
-      cons.dim = wide ? 1 : 0.45;
+      cons.dim = dim;
     }
 
     function draw(now) {
@@ -276,6 +301,8 @@
 
     layout();
     if (reduceMotion) draw(performance.now() + 10000); else play();
+    // web fonts change the headline height, so refit once they arrive
+    if (document.fonts) document.fonts.ready.then(() => { layoutConstellation(); if (reduceMotion) draw(performance.now() + 10000); });
 
     let rt;
     window.addEventListener('resize', () => {
